@@ -14,6 +14,8 @@
                                             ; and retain current section.
             .retainrefs                     ; And retain any sections that have
                                             ; references to current section.
+	.sect ".sysmem"
+x .byte "+500, +200, +"						;Saves the string in x
 
 ;-------------------------------------------------------------------------------
 RESET       mov.w   #__STACK_END,SP         ; Initialize stackpointer
@@ -22,9 +24,8 @@ StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
 
 ;-------------------------------------------------------------------------------
 ; Main loop here
-;-------------------------------------------------------------------------------
-
-                                            
+			mov #x,R7
+;--------------------------------------------------------------------------------
 
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition
@@ -37,4 +38,6 @@ StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
 ;-------------------------------------------------------------------------------
             .sect   ".reset"                ; MSP430 RESET Vector
             .short  RESET
-            
+
+            .end
+
