@@ -15,7 +15,7 @@
             .retainrefs                     ; And retain any sections that have
                                             ; references to current section.
 	.sect ".sysmem"
-x .byte "+500, +200, +"						;Saves the string in x
+x .byte "+550, -202, +"						;Saves the string in x
 sum .byte "+"								;debuging purposes
 rest .byte "-"								;debuging purposes
 div .byte "/"								;debuging purposes
@@ -48,18 +48,20 @@ StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
 			clr R15
 			clr R5							;Dummy variable for implementation
 			clr R14							;Guarda el signo del segundo numero
-			clr R13							;GUarda el signo del primer numero
+
 			clr R6							;Here we are going to save the first number
 			clr R7							;Here we are going to save the second number
+
 			clr R8							;Here we are going to save if the numer has a negative sign
-			clr R9							;Here we are going to save the operation
+
+			clr R9							;Here we are going to save the operation to be execute
 
 
 			mov #x, R12						;Here we take the pointer of the string and save it to R12
 			mov R12, R15					;Movemos la direccion de r12 a R15
 			mov #0, R12						;Clear R12
 			mov.b @R15+,R13					;Ponemos el signo del primer operando en R13
-			mov #002Ch,R4
+			mov #002Ch,R4					;Aqui colocamos la comma
 
 			call #num1
 
@@ -87,6 +89,7 @@ sign2:
 num2:
 			mov.b @R15+,R5					;MOve the current number to our dummy register
 			cmp.b R5,R4						;Verificar si lo que acabe de leer es una comma
+			jeq oper						;Brinca a la subrutina que guarda el operando a hacer
 			sub.b #0030h,R5					;para extraer el numero en decimal del ascii
 			call #multTwo
 
@@ -95,8 +98,31 @@ multTwo:
 			mov.b R7, &OP2
 			nop
 			mov &RESLO, R7
-			add R5,R7
+			add R5,R7						;This is the one that stores the multiplication
 			call #num2
+
+oper:
+			inc R15
+			mov @R15+,R9
+			cmp.b #002Bh,R9					;Here we compare if its sum
+			jeq sumation
+			cmp.b #002Dh, R9				;Here we compare if its substraction
+			jeq subs
+			cmp.b #002Fh,R9					;Here we compare if its division
+			jeq division
+			cmp.b #002Ah,R9					;Here we compare if its multiplciation
+			jeq multiplication
+
+multiplication:
+			mov #0, R10
+
+division:
+			ret
+
+subs:
+			ret
+sumation:
+			ret
 
 done:
 			ret
