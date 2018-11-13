@@ -27,78 +27,7 @@ neg .byte "-"								;debuging purposes
 ;-------------------------------------------------------------------------------
 RESET       mov.w   #__STACK_END,SP         ; Initialize stackpointer
 StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
-
-
-;--------------------------------------------------------------------------------
 ;---------------------------------------------------------------------------------
-; Main loop here
-			clr R15
-			clr R13
-			clr r6							;Here we are going to save the first number
-			clr r7							;Here we are going to save the second number
-			clr r8							;Here we are going to save if the numer has a negative sign
-			clr r9							;Here we are going to save the operation
-
-
-			mov #x, R12						;Here we take the pointer of the string and save it to R12
-			mov R12, R15					;Movemos la direccion de r12 a R15
-			mov #0, R12						;Clear R12
-			mov.b @R15+,R13				;Ponemos el signo del primer operando en R13
-			mov #002Ch,R4
-			;mov @R15+,R15				;This is our delimiter, we save the pointer to it in R4
-
-
-			call #num1
-
-num1:
-			mov.b @R15+,R5
-											;Mover primer numero a R5, incrementa R15 para el proximo caracter
-			;inv R15
-			cmp.b R5,R4						;Verificar si acabe de leer el primer operando
-			jeq sign2					    ;Brincamos a leer el proximo numero ***************************************************** arreglar
-			sub.b #0030h,R5				 	;para extraer el numero en decimal del ascii
-			call #multOne					;
-
-
-multOne:
-			mov.b #000Ah, &MPY
-			mov.b R6, &OP2
-			nop
-			mov &RESLO, R6
-			add R5,R6
-			call #num1					;Resultado de operando 1 en R6
-
-sign2:
-			inc R15
-			mov.b @R15+,R14
-			call #num2
-
-num2:
-			mov.b @R15+,R5
-											;Mover primer numero a R5, incrementa R15 para el proximo caracter
-			cmp.b R5,R4						;Verificar si acabe de leer el primer operando
-			;jeq #op					;Brincamos a leer el proximo numero ***************************************************** arreglar
-			sub.b #0030h,R5					;para extraer el numero en decimal del ascii
-			call #multTwo
-
-multTwo:
-			mov.b #000Ah, &MPY
-			mov.b R7, &OP2
-			nop
-			mov &RESLO, R7
-			add R5,R7
-			call #num2					;Resultado de operando 1 en R6
-
-
-;incR15:
-			;inc R15
-
-done:
-			ret
-
-
-;--------------------OLD---------------------------------------------------------
-;--------------------------------------------------------------------------------
 ;COSAS PARA RECORDAR:
 
 	;HAY QUE USAR EL SIGNO DE COMA COMO DELIMITADOR!!!!!!!!
@@ -113,69 +42,64 @@ done:
 	;Hay que desarrollar pruebas para demostrar que el programa trabaja e incluirlas en el reporte
 
 ;---------------------------------------------------------------------------------
-
-;---------------------------------------------------------------------------------
 ; Main loop here
-			;mov #x, R12						;Here we take the pointer of the string and save it to R12
-			;mov #comma,R4					;This is our delimiter, we save the pointer to it in R4
-			;mov #neg,R5						;THis is going to be used to compare if the sign of the number is a negative number
-			;mov #sum,R6						;This is going to save the positive
-			;clr r6							;Here we are going to save the first number
-			;clr r7							;Here we are going to save the second number
-			;clr r8							;Here we are going to save if the numer has a negative sign
-			;clr r9							;Here we are going to save the operation
-			;mov #y, R13
-			;call #organize
-;organize:									;Subrutina que comienza el proceso de traducir las letras
-			;mov R12,R15						;NOw the start of the string is pointed in R15
-			;mov #0,R12						;Cleaning R12, by default the calling convention the result is going to be there because of the return
+;Cleaning of registers
 
-;rep:										;esta subrutina es para leer el string completo
-			;cmp.b #0,0(R15)					;Here we compare if the string is at the end, the end of a string is 0 in ascii
-			;jeq done						;Jump to done if its the end of the string
-			;cmp.b @R15,R5					;Here we compare if the caracter is a negative sign
-			;jeq nega
-			;cmp.b @R15,R4					;Here we compare if what we are currently reading is a comma, our delimiter
-			;jeq num
-			;cmp.b @R15,R6					;Aqui verifica si es el signo de suma
-			;jeq nextch
-			;cmp.b @R15,
-			;mov @R15,R9
-			;mov.b @R15,R10
-			;rla.b R10
-			;rla.b R10
-			;rla.b R10
-			;rla.b R10
-			;jmp nextch						;Aqui me muevo al siguiente caracter
-
-;nega:
-			;mov @R15,R6						;here we save the negative sign
-											; DEBE HABER ALGUNA FORMA DE NO TENER QUE GUARDAR Q ES NEGATIVO EN ALGUN REGISTRO
-											;VERIFICA SI EXISTE ALGUN FLAG PARA ESE CARACTER EN ESPECIFICO Q ME DIGA SI ES NEGATIVO
-
-;num:										;In this subroutine we save each number to r6 and r7
-			;mov
+			clr R15
+			clr R5							;Dummy variable for implementation
+			clr R14							;Guarda el signo del segundo numero
+			clr R13							;GUarda el signo del primer numero
+			clr R6							;Here we are going to save the first number
+			clr R7							;Here we are going to save the second number
+			clr R8							;Here we are going to save if the numer has a negative sign
+			clr R9							;Here we are going to save the operation
 
 
-;nextch: inc R15 							;This subroutine moves to the next character
-		;jmp rep
+			mov #x, R12						;Here we take the pointer of the string and save it to R12
+			mov R12, R15					;Movemos la direccion de r12 a R15
+			mov #0, R12						;Clear R12
+			mov.b @R15+,R13					;Ponemos el signo del primer operando en R13
+			mov #002Ch,R4
 
-;done:
-			;ret
-;--------------------------------------------------------------------------------
-			;mov @R7+,R6
-			;cmp sum,R6
+			call #num1
 
-			;mov 0(R7), R7
-			;mov 2(R7), R8					;Se guarda
-			;mov 4(R7), R9
-			;mov 6(R7), R10
-			;mov 8(R7), R11
-			;mov 10(R7), R12
-			;mov 12(R7), R13
-			;mov 14(R7), R14
+num1:
+			mov.b @R15+,R5					;Lee el numero y lo coloca en R5
+			cmp.b R5,R4						;Verificar si acabe de leer el signo
+			jeq sign2
+			sub.b #0030h,R5				 	;Resta 30h a el numero ascii para sacar el valor del numero en hexadecimal
+			call #multOne					;Llama a la subrutina para mover las unidades
 
-;--------------------------------------------------------------------------------
+
+multOne:
+			mov.b #000Ah, &MPY				;Here we multiply by ten the
+			mov.b R6, &OP2					;THe number in R6 is going to be multiplied by 10
+			nop								;stop time
+			mov &RESLO, R6					;&RESLO is the multiplication of the two numbers which is going to be saved in R6
+			add R5,R6						;Here we add the current number in R5 and the multiplied value
+			call #num1						;NOw we read the next ascii character
+
+sign2:
+			inc R15							;After we finish reading the first number we increment R15 cause we are pointing to a comma
+			mov.b @R15+,R14					;We move the second number to R14
+			call #num2
+
+num2:
+			mov.b @R15+,R5					;MOve the current number to our dummy register
+			cmp.b R5,R4						;Verificar si lo que acabe de leer es una comma
+			sub.b #0030h,R5					;para extraer el numero en decimal del ascii
+			call #multTwo
+
+multTwo:
+			mov.b #000Ah, &MPY
+			mov.b R7, &OP2
+			nop
+			mov &RESLO, R7
+			add R5,R7
+			call #num2
+
+done:
+			ret
 
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition
