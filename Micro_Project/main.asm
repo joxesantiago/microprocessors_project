@@ -15,7 +15,7 @@
             .retainrefs                     ; And retain any sections that have
                                             ; references to current section.
 	.sect ".sysmem"
-x .byte "+550, -202, +"						;Saves the string in x
+x .byte "+550, +202, +"						;Saves the string in x
 sum .byte "+"								;debuging purposes
 rest .byte "-"								;debuging purposes
 div .byte "/"								;debuging purposes
@@ -52,17 +52,18 @@ StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
 			clr R6							;Here we are going to save the first number
 			clr R7							;Here we are going to save the second number
 
-			clr R8							;Here we are going to save if the numer has a negative sign
+			clr R8							;Here we are going to save if the number has a negative sign
 
 			clr R9							;Here we are going to save the operation to be execute
-
+							;CLear the memory of R8
 
 			mov #x, R12						;Here we take the pointer of the string and save it to R12
 			mov R12, R15					;Movemos la direccion de r12 a R15
 			mov #0, R12						;Clear R12
 			mov.b @R15+,R13					;Ponemos el signo del primer operando en R13
 			mov #002Ch,R4					;Aqui colocamos la comma
-
+			mov #0x002126,R8				;Point R8 to memory of the output
+			mov #0x0000,0(R8)
 			call #num1
 
 num1:
@@ -100,29 +101,42 @@ multTwo:
 			mov &RESLO, R7
 			add R5,R7						;This is the one that stores the multiplication
 			call #num2
+signClass:
+
 
 oper:
 			inc R15
 			mov @R15+,R9
 			cmp.b #002Bh,R9					;Here we compare if its sum
-			jeq sumation
+			jeq sumsign
 			cmp.b #002Dh, R9				;Here we compare if its substraction
-			jeq subs
+			jeq subsign
 			cmp.b #002Fh,R9					;Here we compare if its division
 			jeq division
 			cmp.b #002Ah,R9					;Here we compare if its multiplciation
 			jeq multiplication
-
+multsign:
 multiplication:
 			mov #0, R10
-
+divsign:
 division:
+			ret
+subsign:
 			ret
 
 subs:
 			ret
+sumsign:
+			cmp.b R13,R14					;Here we compare the signs of the results
+			jeq sumation					;SI es de igual signo simplemente sumas
+			jne subs						;Si son de signos distintos lo restas
 sumation:
-			ret
+
+			add R6,R7						;Sum both numbers and save them in R7
+			mov.b R13,0(R8)					;Add the sign of the number
+			inc R8
+			mov R7,1(R8)					;R8 is saving the result
+
 
 done:
 			ret
