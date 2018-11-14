@@ -15,7 +15,7 @@
             .retainrefs                     ; And retain any sections that have
                                             ; references to current section.
 	.sect ".sysmem"
-x .byte "+550, +202, +"						;Saves the string in x
+x .byte "+550, -202, +"						;Saves the string in x
 sum .byte "+"								;debuging purposes
 rest .byte "-"								;debuging purposes
 div .byte "/"								;debuging purposes
@@ -122,20 +122,51 @@ divsign:
 division:
 			ret
 subsign:
-			ret
+			;cmp.b R13,R14
 
-subs:
 			ret
+;sum---------------------------------------------------------------------------------------
 sumsign:
 			cmp.b R13,R14					;Here we compare the signs of the results
 			jeq sumation					;SI es de igual signo simplemente sumas
-			jne subs						;Si son de signos distintos lo restas
+			jne findMaxSign						;Si son de signos distintos lo restas
 sumation:
-
 			add R6,R7						;Sum both numbers and save them in R7
 			mov.b R13,0(R8)					;Add the sign of the number
 			inc R8
-			mov R7,1(R8)					;R8 is saving the result
+			mov R7,R9					;R9 is saving the result to be converted to ASCII
+			jmp convertToAscii
+
+
+findMaxSign:
+			cmp R6,R7
+			jl signIsR13
+			jge signIsR14
+
+
+signIsR13:
+			sub R7,R6
+			mov.b R13,0(R8)
+			mov R6,R9					;final real result in r9, ready to be converted to ASCII
+			jmp convertToAscii
+
+
+
+
+signIsR14:
+			sub R6,R7
+			mov.b R14,(R8)
+			mov R7,R9					;final real result in r9, ready to be converted to ASCII
+			;inc R8
+			;mov R7,R6
+			;jmp convertToAscii
+
+convertToAscii:
+			;inc R8			Algo asi
+			;mov R9,R8
+;--------------------------------------------------------------------------------------------
+
+
 
 
 done:
