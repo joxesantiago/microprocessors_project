@@ -15,7 +15,7 @@
             .retainrefs                     ; And retain any sections that have
                                             ; references to current section.
 	.sect ".sysmem"
-x .byte "+550, -202, +"						;Saves the string in x
+x .byte "-550, +202, -"						;Saves the string in x
 sum .byte "+"								;debuging purposes
 rest .byte "-"								;debuging purposes
 div .byte "/"								;debuging purposes
@@ -43,129 +43,169 @@ StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
 
 ;---------------------------------------------------------------------------------
 ; Main loop here
-;Cleaning of registers
-
+			;Cleaning of registers
 			clr R15
 			clr R5							;Dummy variable for implementation
 			clr R14							;Guarda el signo del segundo numero
-
 			clr R6							;Here we are going to save the first number
 			clr R7							;Here we are going to save the second number
-
 			clr R8							;Here we are going to save if the number has a negative sign
-
 			clr R9							;Here we are going to save the operation to be execute
-							;CLear the memory of R8
+											;CLear the memory of R8
+
+
+;---Process to organize two number and opertator and prepare them to make an operation--------------------------------------------------------
 
 			mov #x, R12						;Here we take the pointer of the string and save it to R12
-			mov R12, R15					;Movemos la direccion de r12 a R15
+			mov R12, R15					;Move address of R12 to R15
 			mov #0, R12						;Clear R12
-			mov.b @R15+,R13					;Ponemos el signo del primer operando en R13
-			mov #002Ch,R4					;Aqui colocamos la comma
+			mov.b @R15+,R13					;Move sign of first operand in R13
+			mov #002Ch,R4					;Put Ascii symbol of "," to R4
 			mov #0x002126,R8				;Point R8 to memory of the output
-			mov #0x0000,0(R8)
+			mov #0x0000,0(R8)				;Clear contents of address in R8
 			call #num1
 
-num1:
-			mov.b @R15+,R5					;Lee el numero y lo coloca en R5
-			cmp.b R5,R4						;Verificar si acabe de leer el signo
-			jeq sign2
-			sub.b #0030h,R5				 	;Resta 30h a el numero ascii para sacar el valor del numero en hexadecimal
-			call #multOne					;Llama a la subrutina para mover las unidades
+num1:										;Subroutine to read first operand
+			mov.b @R15+,R5					;Reads next number and stores it in dummy R5
+			cmp.b R5,R4						;Verify if ended reading (reached a ",")
+			jeq sign2						;If finished reading, procede to read next operand
+			sub.b #0030h,R5				 	;Substract #30h to ascii number to obtain real number in hex
+			call #multOne
 
 
-multOne:
-			mov.b #000Ah, &MPY				;Here we multiply by ten the
-			mov.b R6, &OP2					;THe number in R6 is going to be multiplied by 10
+multOne:									;subroutine to move units and keep adding digits to operand
+			mov.b #000Ah, &MPY				;Here we multiply by ten
+			mov.b R6, &OP2					;The number in R6 is going to be multiplied by 10
 			nop								;stop time
 			mov &RESLO, R6					;&RESLO is the multiplication of the two numbers which is going to be saved in R6
 			add R5,R6						;Here we add the current number in R5 and the multiplied value
-			call #num1						;NOw we read the next ascii character
+			call #num1						;Now we read the next ascii character
 
 sign2:
 			inc R15							;After we finish reading the first number we increment R15 cause we are pointing to a comma
 			mov.b @R15+,R14					;We move the second number to R14
-			call #num2
+			call #num2						;Proceed to read next ascii number
 
-num2:
-			mov.b @R15+,R5					;MOve the current number to our dummy register
-			cmp.b R5,R4						;Verificar si lo que acabe de leer es una comma
-			jeq oper						;Brinca a la subrutina que guarda el operando a hacer
-			sub.b #0030h,R5					;para extraer el numero en decimal del ascii
+num2:										;Subroutine to read second operand
+			mov.b @R15+,R5					;Reads next number and stores it in dummy R5
+			cmp.b R5,R4						;Verify if ended reading (reached a ",")
+			jeq oper						;If finished, go to read operator
+			sub.b #0030h,R5					;Substract #30h to ascii number to obtain real number in hex
 			call #multTwo
 
-multTwo:
-			mov.b #000Ah, &MPY
-			mov.b R7, &OP2
-			nop
-			mov &RESLO, R7
-			add R5,R7						;This is the one that stores the multiplication
+multTwo:									;subroutine to move units and keep adding digits to operand
+			mov.b #000Ah, &MPY				;Here we multiply by ten
+			mov.b R7, &OP2					;The number in R7 is going to be multiplied by 10
+			nop								;stop time
+			mov &RESLO, R7					;&RESLO is the multiplication of the two numbers which is going to be saved in R7
+			add R5,R7						;Here we add the current number in R5 and the multiplied value
 			call #num2
-signClass:
-
 
 oper:
-			inc R15
-			mov @R15+,R9
-			cmp.b #002Bh,R9					;Here we compare if its sum
-			jeq sumsign
-			cmp.b #002Dh, R9				;Here we compare if its substraction
-			jeq subsign
-			cmp.b #002Fh,R9					;Here we compare if its division
-			jeq division
-			cmp.b #002Ah,R9					;Here we compare if its multiplciation
-			jeq multiplication
-multsign:
-multiplication:
-			mov #0, R10
-divsign:
-division:
-			ret
-subsign:
-			;cmp.b R13,R14
+			inc R15							;Increment R15 because it is pointing to space
+			mov @R15+,R5					;Move operator to dummy register
+			cmp.b #002Bh,R5					;Here we compare if its sum
+			jeq sumsign						;Call sum subroutine
+			cmp.b #002Dh, R5				;Here we compare if its substraction
+			jeq subsign						;Call substraction subroutine
+			cmp.b #002Fh,R5					;Here we compare if its division
+			jeq divsign						;Call division Subroutine
+			cmp.b #002Ah,R5					;Here we compare if its multiplciation
+			;jeq multiplication				;Call multiplication subroutine
 
-			ret
-;sum---------------------------------------------------------------------------------------
+;Sum Subroutine-------------------------------------------------------------------------------------------------------------------------------------------------
 sumsign:
-			cmp.b R13,R14					;Here we compare the signs of the results
-			jeq sumation					;SI es de igual signo simplemente sumas
-			jne findMaxSign						;Si son de signos distintos lo restas
+			cmp.b R13,R14					;Compare signs
+			jeq sumation					;If equal signs, sum them
+			jne findMaxSign					;Else, find largest number and use its sign in result
 sumation:
-			add R6,R7						;Sum both numbers and save them in R7
-			mov.b R13,0(R8)					;Add the sign of the number
-			inc R8
-			mov R7,R9					;R9 is saving the result to be converted to ASCII
-			jmp convertToAscii
+			add R6,R7						;Sum operands and store them in R7
+			mov.b R13,0(R8)					;Add sign to R8
+			inc R8							;Incrementamos R8 to point to next direction in memory
+			mov R7,R9						;R9 is saving the result to be converted to ASCII
+			jmp convertToAscii				;Call subroutine that converts bianry back to ascii
 
 
 findMaxSign:
-			cmp R6,R7
-			jl signIsR13
-			jge signIsR14
+			cmp R6,R7						;Compare two operands
+			jl signIsR13					;If first operand is bigger, call signIs13 subroutine
+			jge signIsR14					;Else, call signIs14 subroutine
 
 
 signIsR13:
-			sub R7,R6
-			mov.b R13,0(R8)
-			mov R6,R9					;final real result in r9, ready to be converted to ASCII
-			jmp convertToAscii
-
-
+			sub R7,R6						;substract R7 from R6 and store in r6
+			mov.b R13,0(R8)					;Move sign to R8
+			inc R8
+			mov R6,R9						;Final real result in r9, ready to be converted to ASCII
+			jmp convertToAscii				;Call subroutine that converts bianry back to ascii
 
 
 signIsR14:
 			sub R6,R7
-			mov.b R14,(R8)
-			mov R7,R9					;final real result in r9, ready to be converted to ASCII
-			;inc R8
-			;mov R7,R6
-			;jmp convertToAscii
+			mov.b R14,0(R8)
+			mov R7,R9						;final real result in r9, ready to be converted to ASCII
+			inc R8
+			jmp convertToAscii
+
+
+
+;End Sum SubRoutine--------------------------------------------------------------------------------------------
+
+;Substraction Subroutine---------------------------------------------------------------------------------------
+subsign:
+			cmp R13,r14						;Compare signs
+			jeq findMaxSign2
+			jne substraction
+
+substraction:
+			add R6,R7
+			mov.b R13, 0(R8)
+			inc R8
+			mov R7,R9
+			jmp convertToAscii
+
+findMaxSign2:
+			cmp R6,R7
+			jl signIs13sub
+			jge signIs14sub
+
+signIs13sub:
+			sub R7,R6
+			mov.b R13,0(R8)
+			inc R8
+			mov R6,R9
+			jmp convertToAscii
+
+signIs14sub:
+			sub R6,R7
+			mov.b R14,0(R8)
+			mov R7,R9						;final real result in r9, ready to be converted to ASCII
+			inc R8
+			jmp convertToAscii
+;End Substraction SubRoutine--------------------------------------------------------------------------------------------
+--------------- Codigo de Jose------------------------------------------------------------------------------------------
+divsign:
+			cmp R13,R14					;Compare both numbers signs
+			jz posresult				;If both numbers have the same sign, positive result
+			jnz negresult				;If numbers have different signs, negative result
+
+division:
+			cmp R7,R6					;Verify if second number fits inside first number
+			jl divsign
+			sub R7,R6					;Substract second number to first number
+			inc R9						;Increment number of times that second number fits inside first
+			jnz division
+
+posresult:
+			ret
+
+negresult:
+			ret
+--------------------------------------------------------------------------------------------------------------------------
+
+
 
 convertToAscii:
-			;inc R8			Algo asi
-			;mov R9,R8
-;--------------------------------------------------------------------------------------------
-
 
 
 
