@@ -15,7 +15,7 @@
             .retainrefs                     ; And retain any sections that have
                                             ; references to current section.
 	.sect ".sysmem"
-x .byte "-550, +202, -"						;Saves the string in x
+x .byte "-550, +220, -"						;Saves the string in x
 sum .byte "+"								;debuging purposes
 rest .byte "-"								;debuging purposes
 div .byte "/"								;debuging purposes
@@ -109,9 +109,9 @@ oper:
 			cmp.b #002Dh, R5				;Here we compare if its substraction
 			jeq subsign						;Call substraction subroutine
 			cmp.b #002Fh,R5					;Here we compare if its division
-			jeq divsign						;Call division Subroutine
+			jeq division					;Call division Subroutine
 			cmp.b #002Ah,R5					;Here we compare if its multiplciation
-			;jeq multiplication				;Call multiplication subroutine
+			jeq multiplication				;Call multiplication subroutine
 
 ;Sum Subroutine-------------------------------------------------------------------------------------------------------------------------------------------------
 sumsign:
@@ -183,25 +183,32 @@ signIs14sub:
 			inc R8
 			jmp convertToAscii
 ;End Substraction SubRoutine--------------------------------------------------------------------------------------------
---------------- Codigo de Jose------------------------------------------------------------------------------------------
-divsign:
-			cmp R13,R14					;Compare both numbers signs
-			jz posresult				;If both numbers have the same sign, positive result
-			jnz negresult				;If numbers have different signs, negative result
+;--------------- Codigo de Jose------------------------------------------------------------------------------------------
+
+multiplication:
+			mov.b R6, &MPY					;Here we multiply by R6, first number
+			mov.b R7, &OP2					;The number in R7, second number, is going to be multiplied by R6, first number
+			nop								;Stop time
+			mov &RESLO, R9					;&RESLO is the multiplication of the two numbers which is going to be saved in R8
+			call #multdivsign				;Call subrutine multdivsign to determine the sign of the result
 
 division:
 			cmp R7,R6					;Verify if second number fits inside first number
-			jl divsign
+			jl multdivsign              ;Call subrutine multdivsign to determine the sign of the result	when we finished
 			sub R7,R6					;Substract second number to first number
 			inc R9						;Increment number of times that second number fits inside first
 			jnz division
 
+multdivsign:
+			cmp R13,R14					;Compare both numbers signs
+			jz posresult				;If both numbers have the same sign, positive result
+			jnz negresult				;If numbers have different signs, negative result
 posresult:
 			ret
 
 negresult:
 			ret
---------------------------------------------------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------------------------------
 
 
 
@@ -225,4 +232,3 @@ done:
             .short  RESET
 
             .end
-
